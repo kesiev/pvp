@@ -1,0 +1,52 @@
+<html>
+<body onload="onl()">
+</body>
+<script>
+
+function onl() {
+
+	var ANIMS=[
+		{sx:0,sy:1,dx:0,dy:1,frames:4}, // Walk 1
+		{sx:1,sy:1,dx:0,dy:1,frames:4}, // Walk 2
+		{sx:2,sy:1,dx:0,dy:1,frames:4}, // Walk 3
+		{sx:3,sy:1,dx:0,dy:1,frames:4}, // Walk 4
+		{sx:4,sy:1,dx:0,dy:1,frames:4}, // Walk 5
+		{sx:5,sy:1,dx:0,dy:1,frames:4}, // Walk 6
+		{sx:6,sy:1,dx:0,dy:1,frames:4}, // Walk 7
+		{sx:7,sy:1,dx:0,dy:1,frames:4}, // Walk 8
+
+		{sx:0,sy:0,dx:1,dy:0,frames:8}, // Rotate 0
+		{sx:0,sy:1,dx:1,dy:0,frames:8}, // Rotate 1
+		{sx:0,sy:2,dx:1,dy:0,frames:8}, // Rotate 2
+		{sx:0,sy:3,dx:1,dy:0,frames:8}, // Rotate 3
+		{sx:0,sy:4,dx:1,dy:0,frames:8}, // Rotate 4
+		{sx:0,sy:5,dx:1,dy:0,frames:8}, // Rotate 5
+
+		{sx:0,sy:6,dx:1,dy:0,frames:5}, // Death
+	];
+
+	ANIMS.forEach((anim,id)=>{
+		anim.div=document.createElement("div");
+		document.body.appendChild(anim.div);
+		anim.div.style.width="32px";
+		anim.div.style.height="32px";
+		anim.div.style.imageRendering="pixelated";
+		if (id>0) anim.div.style.marginTop="128px";
+		anim.div.style.transformOrigin="0 0";
+		anim.div.style.transform="scale(4)";
+		anim.div.style.border="1px solid red";
+		anim.div.style.backgroundImage="url(../../game/graphics/soldier.png)";
+		anim.i=0;
+	})
+
+	setInterval(function(){
+		ANIMS.forEach(anim=>{
+			anim.div.style.backgroundPosition=(-(32*(anim.sx+anim.i*anim.dx)))+"px "+(-(32*(anim.sy+anim.i*anim.dy)))+"px";
+			anim.i=(anim.i+1)%anim.frames;
+		});
+	},1000/5)
+
+}
+
+
+</script>

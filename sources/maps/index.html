@@ -1,0 +1,357 @@
+<html>
+<body onload="onl()">
+	<h3>Data</h3>
+	<textarea id="out"></textarea>
+	<hr>
+	<h3>Text</h3>
+	<textarea id="outtext"></textarea>
+	<hr>
+	<input type="button" value="Reload" onclick="reload()">
+</body>
+<script>
+function getFile(file,cb) {
+	var xmlhttp = new XMLHttpRequest();
+	if (cb)
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4)
+				if ((xmlhttp.status == 200)||(xmlhttp.status==0)) cb(xmlhttp.responseText);
+				else cb();
+		};
+	xmlhttp.open("GET", file, true);
+	xmlhttp.send();
+}
+
+function getProperty(set,id) {
+	var ret=0;
+	set.forEach(row=>{
+		if (row.name==id) ret=row.value;
+	})
+	return ret;
+}
+
+function gridize(set,height) {
+	var grid=[];
+	var rowSize=set.length/height;
+	var rows=set.length/rowSize
+	for (var i=0;i<rows;i++)
+		grid.push(set.splice(0,rowSize));
+	return grid;
+}
+
+function getGridBounds(layerId,grid) {
+	var fLeft=grid[0].length-1,fRight=0,fTop,fBottom=grid.length-1;
+	grid.forEach((row,id)=>{
+		var bound={};
+		var left,right;
+		for (var i=0;i<row.length;i++) {
+			if (left==undefined) if (row[i]) left=i;
+			if (right==undefined) if (row[row.length-i-1]) right=row.length-i-1;
+		}
+		if (left!==undefined) {
+			if (fTop==undefined) fTop=id;
+			fBottom=id;
+			if (left<fLeft) fLeft=left;
+			if (right>fRight) fRight=right;
+		}
+	});
+	return fTop==undefined?0:{
+		type:"tiles",
+		id:layerId,
+		left:fLeft,
+		right:fRight,
+		top:fTop,
+		bottom:fBottom
+	};
+}
+
+function getObjectsBounds(layerId,layer) {
+	var fLeft=999999,fRight=0,fTop=999999,fBottom=0;
+	layer.objects.forEach(obj=>{
+		var x=obj.x;
+		var y=obj.y;
+		if (obj.gid) y-=16;
+		var right=x+obj.width-1;
+		var bottom=y+obj.height-1;
+		if (y<fTop) fTop=y;
+		if (bottom>fBottom) fBottom=bottom;
+		if (x<fLeft) fLeft=x;
+		if (right>fRight) fRight=right;
+	});
+	return fTop==undefined?0:{
+		type:"objects",
+		id:layerId,
+		left:Math.floor(fLeft/16),
+		right:Math.floor(fRight/16),
+		top:Math.floor(fTop/16),
+		bottom:Math.floor(fBottom/16),
+	};
+}
+
+function getLayersBounds(layers) {
+	var bounds;
+	for (var l in layers) {
+		var layer=layers[l];
+		if (bounds===undefined) {
+			bounds={
+				left:layer.left,
+				right:layer.right,
+				top:layer.top,
+				bottom:layer.bottom
+			}
+		} else {
+			if (layer.left<bounds.left) bounds.left=layer.left;
+			if (layer.right>bounds.right) bounds.right=layer.right;
+			if (layer.bottom>bounds.bottom) bounds.bottom=layer.bottom;
+			if (layer.top<bounds.top) bounds.top=layer.top;
+		}
+		delete layer.bounds;
+	}
+	return bounds;
+}
+
+function cropLayers(layers,crop) {
+	for (var l in layers) {
+		var layer=layers[l];
+		var grid=[];
+		for (var i=crop.top;i<=crop.bottom;i++)
+			grid.push(layer.grid[i].splice(crop.left,crop.right-crop.left+1))
+		layers[l].grid=grid;
+	}
+}
+
+function translateMods(mods,crop) {
+	mods.forEach(mod=>{
+		mod.x-=crop.left;
+		mod.y-=crop.top;
+	});
+}
+
+function getTileId(gids,id) {
+	var out={gid:999,name:""};
+	gids.forEach(gid=>{
+		var nid=id-gid.gid;
+		if ((nid>=0)&&(nid<out.gid))
+			out={gid:nid,name:gid.name,id:gid.name+"-"+nid};
+	})
+	return out;
+}
+
+function roundNumber(num) {
+	return Math.floor(num*1000)/1000;
+}
+
+function convertAngle(angle) {
+	angle=((angle*1)+90)%360;
+	if (angle<0) angle=360+angle;
+	angle=roundNumber(angle*Math.PI/180);
+	return angle;
+}
+
+function reload() {
+	copyText=document.getElementById("out");
+	copyText.value="Loading...";
+	outtext.value="Loading...";
+	allText="";
+
+	var SPRITES_ATTRIBUTE={
+		"sprites-editor-0":{type:"pickablePistol"},
+		"sprites-editor-1":{type:"pickableMachinegun"},
+		"sprites-editor-15":{type:"pickableShotgun"},
+		"sprites-editor-16":{type:"pickableSniper"},
+		"sprites-editor-17":{type:"pickableRocketLauncher"},
+		"sprites-editor-49":{type:"pickableGrenadeLauncher"},
+		"sprites-editor-43":{type:"pickableKnife"},
+
+		"sprites-editor-21":{type:"obstaclePike"},
+		"sprites-editor-10":{type:"obstacleColumn"},
+		"sprites-editor-33":{type:"obstaclePole"},
+		"sprites-editor-34":{type:"obstacleBush"},
+		"sprites-editor-42":{type:"obstacleFern"},
+		"sprites-editor-63":{type:"obstacleStalagmite"},
+		"sprites-editor-74":{type:"obstacleStatue"},
+
+		"sprites-editor-2":{type:"smallObstacleDrum"},
+		
+		"sprites-editor-35":{type:"decorationLeaf" },
+		"sprites-editor-53":{type:"decorationGrass1" },
+		"sprites-editor-54":{type:"decorationGrass2" },
+		"sprites-editor-73":{type:"decorationChandelier"},
+		"sprites-editor-64":{type:"decorationBrokenDrone"},
+		"sprites-editor-65":{type:"decorationBrokenDrones"},
+		"sprites-editor-75":{type:"decorationSkull"},
+		"sprites-editor-76":{type:"decorationBones"},
+		"sprites-editor-77":{type:"decorationEye"},
+
+		"sprites-editor-44":{type:"projectile"},
+
+		//"tiles-9":{onwalk:true,damage:10,floorScrollX:0.5,floorScrollY:0.5,floorTextureX:10,floorLight:1.8},
+
+		"tiles-10":{type:"hotspot"},
+		"sprites-editor-3":{type:"spawnpoint0"},
+		"sprites-editor-4":{type:"spawnpoint1"},
+		"sprites-editor-5":{type:"spawnpoint2"},
+		"sprites-editor-6":{type:"spawnpoint3"},
+		"sprites-editor-7":{type:"flag"},
+		"sprites-editor-8":{type:"teleport"}
+	};
+
+	getFile("maps.json?x="+Math.random(),function(txt){
+		var MAPS=[];
+		var json=JSON.parse(txt);
+		var gids=[];
+
+		json.tilesets.forEach(tileset=>{
+			gids.push({gid:tileset.firstgid,name:tileset.name});
+		})
+
+		json.layers.forEach((map,mapid)=>{
+			var MAP={
+				label:getProperty(map.properties,"label")
+			};
+			
+			[
+				// Lights
+				"tintBase","tintRamp",
+				"overallLight","overallTint",
+				"skyboxTint","skyboxLight",
+				"floorLight","floorTint",
+				"ceilingLight","ceilingTint",
+				"wallLight","wallTint",
+				"wallCornerLight","wallCornerTint",
+				"spritesLight","spritesTint",
+				"shadowLight","shadowTint",
+				// Walls
+				"highestWall"
+			].forEach(number=>{
+				if (getProperty(map.properties,number)) MAP[number]=getProperty(map.properties,number)*1;
+			});
+
+			[
+				// Lights
+				"tintColor",
+				// Sky/floor
+				"skybox","floorColor","skyColor",
+				// Description
+				"description"
+
+			].forEach(str=>{
+				if (getProperty(map.properties,str)) MAP[str]=getProperty(map.properties,str);	
+			})
+
+			// Skybox custom color
+			if (getProperty(map.properties,"skyboxR")) {
+				MAP.skyboxColor=[
+					getProperty(map.properties,"skyboxR"),
+					getProperty(map.properties,"skyboxG"),
+					getProperty(map.properties,"skyboxB")
+				]
+			}
+
+			var cropX1,cropY1,cropX2,cropY2;
+			var layers={};
+			var mods=[];
+			var bounds=[];
+			map.layers.forEach(layer=>{
+				if (layer.data) {
+					var layerId=layer.name;
+					var grid=gridize(layer.data,layer.height);
+					layers[layerId]={
+						id:layerId,
+						grid:grid
+					};
+					bounds.push(getGridBounds(layer.name,grid));
+				} else {
+					bounds.push(getObjectsBounds(layer.name,layer));
+					layer.objects.forEach(obj=>{
+						var mod={
+							x:obj.x/16,
+							y:obj.y/16
+						};
+						if (obj.name)
+							mod.properties={id:obj.name};
+						if (obj.gid) {
+							mod.y--;
+							var tid=getTileId(gids,obj.gid);
+							if (SPRITES_ATTRIBUTE[tid.id]) {
+								for (var k in SPRITES_ATTRIBUTE[tid.id])
+									mod[k]=SPRITES_ATTRIBUTE[tid.id][k];
+							}
+							else
+							 	console.warn("error in map",MAP.label,"at",tid.id,":",obj);
+						} else {
+							if (obj.width>16) mod.width=obj.width/16;
+							if (obj.height>16) mod.height=obj.height/16;
+							mod.type=obj.type;
+						}
+						if (obj.properties) {
+							if (!mod.properties) mod.properties={};
+							obj.properties.forEach(property=>{
+								switch (property.name) {
+									case "sequence":{
+										var sequence=eval(property.value);
+										sequence.forEach(action=>{
+											if (action.angle!==undefined) action.angle=convertAngle(action.angle);
+										});
+										mod.properties[property.name]=sequence;
+										break;
+									}
+									case "angle":{
+										mod.properties[property.name]=convertAngle(property.value);
+										break;
+									}
+									case "z":
+									case "tint":
+									case "light":{
+										mod.properties[property.name]=property.value*1;
+										break;
+									}
+									default:{
+										mod.properties[property.name]=property.value;
+									}
+								}									
+							})
+						}
+						mods.push(mod);
+					})
+				}
+			});
+
+			var largerBounds=getLayersBounds(bounds);
+			cropLayers(layers,largerBounds);
+			translateMods(mods,largerBounds);
+			
+			MAP.mods=mods;
+			MAP.floor=layers.floor;
+			MAP.ceiling=layers.ceiling;
+			MAP.wall=layers.wall;
+
+			MAPS.push(MAP);
+
+			allText+=MAP.label+"\n"+MAP.description+"\n\n";
+
+		});
+
+
+		copyText.value="var MAPS="+JSON.stringify(MAPS)+";";
+		outtext.value=allText;		
+		console.log("MAPS:");
+		console.log(MAPS);
+		console.log("JSON:");
+		console.log(json);
+
+	  /* Select the text field */
+	  copyText.select();
+	  copyText.setSelectionRange(0, 9999999); /*For mobile devices*/
+
+	  /* Copy the text inside the text field */
+	  document.execCommand("copy");
+
+
+
+	});
+}
+
+function onl() {
+		reload();
+}
+</script>

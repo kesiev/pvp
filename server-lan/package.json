@@ -1,0 +1,16 @@
+{
+  "name": "PvP",
+  "version": "0.1.0",
+  "description": "An opensource web browser 1-4 Players arena shooter you can play offline in split-screen and networked (experimental).",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kesiev/pvp.git"
+  },
+  "dependencies": {
+    "socket.io": ">=2.3.0"
+  },
+  "author": "KesieV",
+  "homepage": "https://github.com/kesiev/pvp",
+  "license": "GPL-3.0-or-later"
+}

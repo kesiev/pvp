@@ -1,0 +1,526 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no">
+	<title>Player Versus Player</title>
+	<script src='/socket.io/socket.io.js'></script>
+
+	<script type="text/javascript" src="js/external/peerjs.min.js"></script>
+	<script type="text/javascript" src="js/external/samjs.min.js"></script>
+	<script type="text/javascript" src="js/external/xm.js"></script>
+	<script type="text/javascript" src="js/external/xmeffects.js"></script>
+
+	<script type="text/javascript" src="js/netplay-config.js"></script>
+
+	<script type="text/javascript" src="js/netplay-server.js"></script>
+	<script type="text/javascript" src="js/netplay.js"></script>
+	<script type="text/javascript" src="js/netplay-socketio.js"></script>
+	<script type="text/javascript" src="js/netplay-peerjs.js"></script>
+
+	<script type="text/javascript" src="js/data.js"></script>
+	<script type="text/javascript" src="js/qmath.js"></script>
+
+	<script type="text/javascript" src="js/gui-keymenu.js"></script>
+	<script type="text/javascript" src="js/gui-setupgame.js"></script>
+	<script type="text/javascript" src="js/gui-joinbox.js"></script>
+
+	<script type="text/javascript" src="js/particles.js"></script>
+	<script type="text/javascript" src="js/staticgenerator.js"></script>
+	<script type="text/javascript" src="js/engine.js"></script>
+	<script type="text/javascript" src="js/maps.js"></script>
+	<script type="text/javascript" src="js/weapons.js"></script>
+	<script type="text/javascript" src="js/controls.js"></script>
+	<script type="text/javascript" src="js/controlsexplain.js"></script>
+	<script type="text/javascript" src="js/gamemodes.js"></script>
+	<script type="text/javascript" src="js/gamemodes-arcade.js"></script>
+	<script type="text/javascript" src="js/game.js"></script>
+	<script type="text/javascript" src="js/transition.js"></script>
+	<script type="text/javascript" src="js/gamestate.js"></script>
+	<script type="text/javascript" src="js/mainmenu.js"></script>
+	<script type="text/javascript" src="js/audioplayer.js"></script>
+	<script type="text/javascript" src="js/cover.js"></script>
+	<script type="text/javascript" src="js/settings.js"></script>
+	<script type="text/javascript" src="js/maploader.js"></script>
+	<script type="text/javascript" src="js/credits.js"></script>
+	<script type="text/javascript" src="js/scoreattack.js"></script>
+	<script type="text/javascript" src="js/localmultiplayer.js"></script>
+	<script type="text/javascript" src="js/benchmark.js"></script>
+	<style>
+
+		CANVAS {
+			image-rendering: optimizeSpeed;
+			image-rendering: -moz-crisp-edges;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: -o-crisp-edges;
+			image-rendering: pixelated;
+			-ms-interpolation-mode: nearest-neighbor;
+		}
+
+		.floating {  
+		    animation-name: floating;
+		    animation-duration: 3s;
+		    animation-iteration-count: infinite;
+		    animation-timing-function: ease-in-out;
+		    margin-left: 30px;
+		    margin-top: 5px;
+		}
+
+		@keyframes floating {
+		    from { transform: translate(0,  0); }
+		    50%  { transform: translate(0, 2vh); }
+		    to   { transform: translate(0, -0); }    
+		}
+
+		BODY {
+			padding:0;
+			margin:0;
+			width:100%;
+			height:100%;
+			background-color: #000;
+			overflow: hidden;
+			color:#f5edba;
+			font-family: sans-serif;
+		}
+
+		A {
+			color:#f5edba;
+		}
+
+		.noselect {
+			 -webkit-touch-callout: none;
+		    -webkit-user-select: none;
+		     -khtml-user-select: none;
+		       -moz-user-select: none; 
+		        -ms-user-select: none;
+		            user-select: none;
+		}
+
+		#loaderbox, #credits {
+			font-size: 2vh;
+			white-space: nowrap;
+			overflow: hidden;
+			position: absolute;
+			left:0;
+			right:0;
+			bottom:5vh;
+			height:3vh;
+			line-height: 3vh;
+			text-align: center;			
+			background-color: #3e2137;
+			z-index: 100;
+		}
+
+		#credits A {
+			color:#34859d;
+		}
+
+		#loaderbox {
+			display: none;
+		}
+
+		#loaderbar {
+			position: absolute;
+			left:0;
+			bottom:0;
+			top:0;
+			background-color: #9d303b;
+			z-index: 10;
+		}
+		
+		#loaderlog {
+			font-size: 2vh;
+			z-index: 20;
+			position: absolute;
+			left:0;
+			right:0;
+			bottom:0;
+			top:0;
+			line-height: 3vh;
+			white-space: nowrap;
+			overflow: hidden;
+		}
+
+		#cover {
+			position: absolute;
+			left:0;
+			right:0;
+			top:0;
+			bottom:0;
+		}
+
+		.splashimage {
+			position: absolute;
+			left:1vw;
+			right:2vw;
+			top:5vh;
+			bottom:30vh;
+			background-position: center;
+			background-size: contain;
+			background-repeat: no-repeat;
+			background-image: url(graphics/logo.svg);	
+		}
+
+		.button {
+			cursor:pointer;			
+			position: absolute;
+			bottom:10vh;
+			height:8vh;
+			line-height: 8vh;
+			width:40vw;
+			white-space: nowrap;
+			background-color: #9d303b;
+			font-size:6vh;
+			padding:2vh;			
+		}
+
+		#playbutton {
+			left:0vw;
+			text-align: right;
+		}
+
+		#settingsbutton {
+			right:0vw;
+			text-align: left;
+		}
+
+		#settingspanel {
+			z-index: 10;
+			font-size:2vh;
+			line-height: 4vh;
+			display:none;
+			right:0;
+			position: absolute;
+			bottom:24vh;
+			width:40vw;
+			background-color: #3e2137;
+			padding:2vh;			
+			white-space: nowrap;
+			overflow-y:none;
+			overflow-x: auto;
+		}
+
+		#settingspanel SELECT, #settingspanel INPUT {
+			font-size:2vh;
+			border: 2px solid #9d303b;
+			background-color: #3e2137;
+			color:#f5edba;
+		}
+
+		#settingspanel INPUT {
+			width:100px;
+		}
+
+		.touchPanel {
+			position: absolute;
+			border:1px solid #fff;
+			z-index: 10;
+			font-size: 3vh;
+			text-align:center;
+			overflow: hidden;
+			color:#fff;
+		}
+
+		#browsernotice {
+			position: absolute;
+			bottom:1vh;
+			height:2vh;
+			left:0;
+			right:0;
+			white-space: nowrap;
+			white-space: nowrap;
+			overflow: hidden;
+			font-size: 1.5vh;
+			text-align: center;
+		}
+
+		#browsernotice IMG {
+			width:1.5vh;
+			vertical-align: middle;
+		}
+
+	</style>
+</head>
+<body onload="onl()">
+	<div id="cover">
+		<div class="splashimage floating"></div>
+		<div id="browsernotice"><img src="graphics/firefox-logo.png"> Plays better on <a target='_blank' href='https://www.mozilla.org/it/firefox/new/'>Firefox Browser</a></div>
+		<div id="playbutton" class="button noselect">Play</div>
+		<div id="settingsbutton" class="button noselect">Setup</div>
+		<div id="settingspanel" class="noselect"></div>
+		<div id="loaderbox">
+			<div id="loaderbar"></div>
+			<div id="loaderlog"></div>
+		</div>
+		<div id="credits"></div>
+	<div>
+</body>
+<script>
+
+function onl() {
+
+	DOM=new Dom();
+
+	// HTML Cover - wait for click for loading resources and initializing the game.
+
+	var
+		COVER=new Cover(),
+		screenControls=[];
+	
+	if (DOM.isTouch) screenControls.push({value:"touch",label:"Touch screen"});
+	screenControls.push({value:"mouse",label:"Mouse"})
+	COVER.initialize({
+		settings:[			
+			{
+				id:"screenControls",
+				label:"Screen controls",
+				values:screenControls
+			},
+			{
+				id:"renderingMode",
+				label:"Rendering mode",
+				values:[
+					{value:"onscreen",label:"On-screen"},
+					{value:"offscreensync",label:"Off-screen sync"},
+					{value:"offscreen",label:"Off-screen"},
+				]
+			},
+			{
+				id:"math",
+				label:"Math",
+				values:[
+					{value:"base",label:"Browser"},
+					{value:"approx",label:"Approximations"},
+					{value:"table",label:"Table"},
+				]
+			},
+			{
+				id:"loadAudio",
+				label:"Load audio",
+				values:[
+					{value:1,label:"Yes"},
+					{value:0,label:"No"}
+				]
+			},
+			{
+				id:"lowRes",
+				label:"Low resolution",
+				values:[
+					{value:0,label:"No"},
+					{value:1,label:"Yes"}
+				]
+			},
+			{
+				id:"benchmark",
+				label:"Benchmark",
+				values:[
+					{value:0,label:"No"},
+					{value:1,label:"Yes"}
+				]
+			}
+		],
+		images:[
+			{id:"textures",file:"graphics/textures.png"},
+			{id:"soldier",file:"graphics/soldier.png"},
+			{id:"skybox-moon",file:"graphics/skybox-moon.png"},
+			{id:"skybox-mars",file:"graphics/skybox-mars.png"},
+			{id:"skybox-mountains",file:"graphics/skybox-mountains.png"},
+			{id:"skybox-jungle",file:"graphics/skybox-jungle.png"},
+			{id:"skybox-space",file:"graphics/skybox-space.png"},
+			{id:"skybox-city",file:"graphics/skybox-city.png"},
+			{id:"skybox-earth",file:"graphics/skybox-earth.png"},
+			{id:"font-large",file:"graphics/font-large.png"},
+			{id:"font-small",file:"graphics/font-small.png"},
+			{id:"weapons",file:"graphics/weapons.png"},
+			{id:"sprites",file:"graphics/sprites.png"},
+			{id:"hud",file:"graphics/hud.png"},
+		],
+		audio:[
+		
+			{id:"point",file:"sounds/point.ogg"},
+			{id:"flagaction",file:"sounds/flagaction.ogg"},
+
+			{id:"die",file:"sounds/die1.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"hit0",file:"sounds/hit1.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"hit1",file:"sounds/hit2.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"hit2",file:"sounds/hit3.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"hit3",file:"sounds/hit4.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"hit4",file:"sounds/hit5.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"pistol",file:"sounds/pistol.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"reload",file:"sounds/reload.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"rocket",file:"sounds/rocket.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"shotgun",file:"sounds/shotgun.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"sniper",file:"sounds/sniper.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"grenade",file:"sounds/grenade.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"knife",file:"sounds/knife.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"machinegun",file:"sounds/machinegun.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"door",file:"sounds/door.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"dronehit",file:"sounds/dronehit.ogg",pitchStart:0.9,pitchRange:0.2},
+			{id:"teleport",file:"sounds/teleport.ogg",pitchStart:0.8,pitchRange:0.4},
+			{id:"explosion",file:"sounds/explosion.ogg",pitchStart:0.8,pitchRange:0.4},
+
+			{id:"speak_ready",sam:{text:"ready?"}},
+			{id:"speak_go",sam:{text:"go!"}},
+			{id:"speak_youaretheone",sam:{text:"you are the one!"}},
+			{id:"speak_bloodlust",sam:{text:"bloodlust!"}},
+			{id:"speak_flagback",sam:{text:"flag is back!"}},
+			{id:"speak_flaglost",sam:{text:"flag is lost!"}},
+			{id:"speak_flagtaken",sam:{text:"flag is taken!"}},
+			{id:"speak_gameover",sam:{text:"game over!"}},
+			{id:"speak_cleared",sam:{text:"cleared!"}},
+			{id:"speak_machinegun",sam:{text:"machine gun!"}},
+			{id:"speak_pistol",sam:{text:"pistol!"}},
+			{id:"speak_knife",sam:{text:"knife!"}},
+			{id:"speak_pointscored",sam:{text:"point scored!"}},
+			{id:"speak_rocketlauncher",sam:{text:"rocket luncher!"}},
+			{id:"speak_grenade",sam:{text:"grenade!"}},
+			{id:"speak_shotgun",sam:{text:"shotgun!"}},
+			{id:"speak_sniper",sam:{text:"sniper!"}},
+			{id:"speak_suicide",sam:{text:"sue side!"}},
+			{id:"speak_missioncleared",sam:{text:"Mission cleared!"}},
+			{id:"speak_youfailed",sam:{text:"You failed!"}},
+			{id:"speak_newmission",sam:{text:"new mission!"}},
+
+			{id:"speak_fragno0",sam:{text:"fragged!"}},
+
+			{id:"speak_fragyes0",sam:{text:"radical!"}},
+			{id:"speak_fragyes1",sam:{text:"incredible!"}},
+			{id:"speak_fragyes2",sam:{text:"you rock!"}},
+			{id:"speak_fragyes3",sam:{text:"outstanding!"}},
+			{id:"speak_fragyes4",sam:{text:"magnificent!"}},
+			{id:"speak_fragyes5",sam:{text:"masterpiece!"}},
+
+			{id:"speak_newhiscore",sam:{text:"new high score!"}},
+
+			{id:"speak_countdown10",sam:{text:"ten."}},
+			{id:"speak_countdown9",sam:{text:"nine."}},
+			{id:"speak_countdown8",sam:{text:"eight."}},
+			{id:"speak_countdown7",sam:{text:"seven."}},
+			{id:"speak_countdown6",sam:{text:"six."}},
+			{id:"speak_countdown5",sam:{text:"five."}},
+			{id:"speak_countdown4",sam:{text:"four."}},
+			{id:"speak_countdown3",sam:{text:"three."}},
+			{id:"speak_countdown2",sam:{text:"two."}},
+			{id:"speak_countdown1",sam:{text:"one."}},
+			{id:"speak_countdown0",sam:{text:"zero."}},
+
+			{id:"speak_title",sam:{text:"Player. versus. player."}},
+
+			// Music
+			{id:"title",mod:"music/her_kiss.xm",title:"Her Kiss",author:"Drozerix"},
+			{id:"song0",mod:"music/hit_xm.xm",title:"Hit The Cheek",author:"DIGITAL BEAT 2000",isSong:true},
+			{id:"song1",mod:"music/mega_destruction.xm",title:"Mega Destruction",author:"Zilly Mike",isSong:true},
+			{id:"song2",mod:"music/biotech.xm",title:"Biotech",author:"Kokesz",isSong:true},
+			{id:"song3",mod:"music/natural.xm",title:"Natural_vision",author:"Kokesz",isSong:true},
+
+			// Menu effects
+			{id:"menu_select",like:"pistol"},
+			{id:"menu_back",like:"reload"},
+			{id:"menu_change",like:"point"},
+			{id:"menu_joinout",like:"hit0"},
+			{id:"menu_joinin",like:"reload"},
+			{id:"menu_notify",like:"point",pitchStart:1.5,pitchRange:0}
+
+		]
+	},(master,images)=>{
+
+		// Basic objects
+		QMATH=new QMath(master);
+		TRIGO=new Trigo(master);
+		SPRITE=new Sprite(master);
+
+		CANVAS=new Canvas(master);
+		CANVAS.initialize();
+
+		RC=new RayCaster({
+			w:SCREEN_WIDTH,
+			h:SCREEN_HEIGHT,
+			textureWidth:32,
+			textureHeight:32,
+			lowRes:master.lowRes
+		});
+
+		// Global objects
+		FONT=CANVAS.createFont(images["font-large"],8,10,-1);
+		FONTSMALL=CANVAS.createFont(images["font-small"],5,8,-1);
+		HUD=CANVAS.createImage(images.hud);
+		SOLDIERTEXTURES=RayCaster.createTextures(images.soldier,32,32);
+		WALLTEXTURES=RayCaster.createTextures(images.textures,32,32);
+		SPRITETEXTURES=RayCaster.createTextures(images.sprites,32,32);
+		WEAPONSSPRITES=CANVAS.createSprites(images.weapons,66,66);
+		SKYBOXES={
+			moon:(images["skybox-moon"]),
+			mars:(images["skybox-mars"]),
+			mountains:(images["skybox-mountains"]),
+			jungle:(images["skybox-jungle"]),
+			space:(images["skybox-space"]),
+			city:(images["skybox-city"]),
+			earth:(images["skybox-earth"])
+		}
+
+		RC.setTextures(WALLTEXTURES);
+
+		DATA=new Data(master);
+		DATA.initialize();
+
+		STATICGENERATOR=new StaticGenerator();
+		STATICGENERATOR.initialize();
+
+		GAMEMODES=new GameModes(master);
+		GAMEMODES.initialize();
+
+		GAMESTATE=new GameState(master);
+		GAMESTATE.initialize();
+
+		CONTROLS=new Controls(master);
+		CONTROLS.initialize(GAMESTATE.screen.canvas);
+
+		KEYMENU=new KeyMenu(master);
+		KEYMENU.initialize();
+
+		CONTROLSEXPLAIN=new ControlsExplain(master);
+		CONTROLSEXPLAIN.initialize();
+
+		SETTINGS=new Settings(master);
+		SETTINGS.initialize();
+
+		// Extra settings
+		NETPLAY=new Netplay([
+			NetplaySocketIo,
+			NetplayPeerJs
+		],master);
+		NETPLAY.initialize();
+
+		TRANSITION=new Transition(master);
+		TRANSITION.initialize();
+
+		// Local objects
+		LOCALMULTIPLAYER=new LocalMultiplayer(master);
+		LOCALMULTIPLAYER.initialize();
+
+		CONTROLSSETTINGSMENU=new ControlsSettings(master);
+		CONTROLSSETTINGSMENU.initialize();
+
+		GAME=new Game(master);
+		GAME.initialize();
+
+		MAPLOADER=new MapLoader(master);
+		MAPLOADER.initialize();
+
+		CREDITS=new Credits(master);
+		CREDITS.initialize();
+
+		SCOREATTACK=new ScoreAttack(master);
+		SCOREATTACK.initialize();
+
+		BENCHMARK=new Benchmark(master);
+		BENCHMARK.initialize();
+		
+		MAINMENU=new MainMenu(master);
+		MAINMENU.initialize();
+
+		var start=0;		
+		GAMESTATE.run(start);
+	});
+
+}
+
+</script>

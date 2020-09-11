@@ -1,0 +1,21 @@
+<html>
+<head>
+	<script type="text/javascript" src="../../game/js/external/samjs.min.js"></script>
+</head>
+<body onload="onl()">
+	<input type="text" id="text">
+	<hr>
+	<input type="button" value="Speak" onclick="speak()">
+</body>
+<script>
+var sam;
+
+function onl() {
+	sam = new SamJs();
+}
+
+function speak() {	
+	sam.speak(document.getElementById("text").value);
+}
+
+</script>

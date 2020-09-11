@@ -1,0 +1,231 @@
+<html>
+<body onload="onl()">
+	<img src="nfo-font_6x8.png" id="font-nfo" style="display:none">
+	<img src="small.png" id="font-small" style="display:none">
+</body>
+<script>
+
+var PALETTE={
+	LIGHTBLUE: [140,143,174], // #8c8fae
+	PURPLE:[88,69,99], // #584563
+	DARKPURPLE:[62,33,55], // #3e2137
+	BROWN:[154,99,72], // #9a6348
+	LIGHTPINK:[215,155,125], // #d79b7d
+	WHITE:[245,237,186], // #f5edba
+	YELLOW:[192,199,65], // #c0c741
+	GREEN:[100,125,52], // #647d34
+	ORANGE:[228,148,58], // #e4943a
+	RED:[157,48,59], // #9d303b
+	PINK:[210,100,113], // #d26471
+	LIGHTPURPLE:[112,55,127], // #70377f
+	CYAN:[126,196,193], // #7ec4c1
+	BLUE:[52,133,157], // #34859d
+	DARKGREEN:[23,67,75], // #17434b
+	BLACK:[31,14,28] // #1f0e1c
+};
+
+var OUTLINE=1;
+var OUTLINECOLOR=PALETTE.BLACK;
+var DARK=0.4;
+var LIGHT=2;
+var COLORS=[
+	[
+		// Black
+		PALETTE.LIGHTPURPLE, PALETTE.LIGHTPURPLE,
+		PALETTE.PURPLE, PALETTE.PURPLE, PALETTE.PURPLE,
+		PALETTE.PURPLE, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// Blue
+		PALETTE.CYAN, PALETTE.CYAN,
+		PALETTE.BLUE, PALETTE.BLUE, PALETTE.BLUE, 
+		PALETTE.BLUE, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// Green
+		PALETTE.YELLOW, PALETTE.YELLOW,
+		PALETTE.GREEN, PALETTE.GREEN, PALETTE.GREEN,
+		PALETTE.GREEN, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// Cyan
+		PALETTE.CYAN, PALETTE.CYAN,
+		PALETTE.CYAN, PALETTE.CYAN, PALETTE.CYAN,
+		PALETTE.CYAN, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// Red
+		PALETTE.PINK, PALETTE.PINK,
+		PALETTE.RED, PALETTE.RED, PALETTE.RED,
+		PALETTE.RED, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// Magenta
+		PALETTE.LIGHTPINK, PALETTE.LIGHTPINK,
+		PALETTE.PINK, PALETTE.PINK, PALETTE.PINK,
+		PALETTE.PINK, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// Yellow
+		PALETTE.YELLOW, PALETTE.YELLOW,
+		PALETTE.YELLOW, PALETTE.YELLOW, PALETTE.YELLOW,
+		PALETTE.YELLOW, PALETTE.WHITE, PALETTE.WHITE
+	],
+	[
+		// White
+		PALETTE.WHITE, PALETTE.WHITE,
+		PALETTE.WHITE, PALETTE.WHITE, PALETTE.WHITE,
+		PALETTE.WHITE, PALETTE.WHITE, PALETTE.WHITE
+	]
+];
+
+function createTexture(node){
+	// Initialize textures
+	var texturesnode=document.getElementById(node);
+	var texturescanvas=document.createElement("canvas");
+	texturescanvas.width=texturesnode.width;
+	texturescanvas.height=texturesnode.height;
+	var tctx=texturescanvas.getContext("2d");
+	tctx.drawImage(texturesnode,0,0);
+	return {
+		width:texturesnode.width,
+		height:texturesnode.height,
+		data:tctx.getImageData(0,0,texturesnode.width,texturesnode.height).data
+	};
+}
+
+function createOut(width,height) {
+	// Initialize textures
+	var texturescanvas=document.createElement("canvas");
+	texturescanvas.width=width;
+	texturescanvas.height=height;
+	var tctx=texturescanvas.getContext("2d");
+	document.body.appendChild(texturescanvas);
+	texturescanvas.style.border="1px solid red";
+	var imgdata=tctx.getImageData(0,0,width,height);
+	return {
+		width:width,
+		height:height,
+		node:texturescanvas,
+		ctx:tctx,
+		imgdata:imgdata,
+		data:imgdata.data
+	};
+}
+
+function getPixel(imagedata,tox,toy) {
+	var destPixel=((toy*imagedata.width)+tox)*4;
+	return [
+		imagedata.data[destPixel],
+		imagedata.data[destPixel+1],
+		imagedata.data[destPixel+2],
+    	imagedata.data[destPixel+3]
+    ];
+}
+
+function rgbLimit(value) {
+	if (value<0) return 0;
+	else if (value>255) return 255;
+	else return Math.floor(value);
+}
+
+function putPixel(imagedata,tox,toy,color) {
+	var destPixel=((toy*imagedata.width)+tox)*4;
+	imagedata.data[destPixel]=rgbLimit(color[0]);
+    imagedata.data[destPixel+1]=rgbLimit(color[1]);
+    imagedata.data[destPixel+2]=rgbLimit(color[2]);
+    imagedata.data[destPixel+3]=255;
+}
+
+function processFont(fontId,letterWidth,letterSpacing) {
+	var font=createTexture(fontId);
+	var LETTERS_COUNT=font.width/(letterWidth+letterSpacing);
+	console.log(LETTERS_COUNT,"letters");
+	var LETTER_HEIGHT=font.height;
+	var OUT_LETTER_HEIGHT=LETTER_HEIGHT+OUTLINE*2;
+	var OUT_LETTER_WIDTH=letterWidth+OUTLINE*2;
+	var out=createOut(
+		OUT_LETTER_WIDTH*LETTERS_COUNT,
+		OUT_LETTER_HEIGHT*COLORS.length
+	);
+
+	COLORS.forEach((rendercolor,colorid)=>{
+		var ox=0;
+		var oy=colorid*OUT_LETTER_HEIGHT;
+		var _y1=0;
+		for (var i=0;i<LETTERS_COUNT;i++) {
+			var lx=ox+(i*OUT_LETTER_WIDTH);
+			var ly=oy;
+			var _x1=i*(letterWidth+letterSpacing);
+			
+			// Outline
+			for (var y=0;y<LETTER_HEIGHT;y++) {
+				var dy=ly+y+1;
+				for (var x=0;x<letterWidth;x++) {
+					var dx=lx+x+1;
+					var color=getPixel(font,x+_x1,y+_y1);
+					if (color[3]) {
+						putPixel(out,dx-1,dy,OUTLINECOLOR);
+						putPixel(out,dx+1,dy,OUTLINECOLOR);
+						putPixel(out,dx,dy-1,OUTLINECOLOR);
+						putPixel(out,dx,dy+1,OUTLINECOLOR);
+							
+						putPixel(out,dx-1,dy-1,OUTLINECOLOR);
+						putPixel(out,dx-1,dy+1,OUTLINECOLOR);
+						putPixel(out,dx+1,dy-1,OUTLINECOLOR);
+						putPixel(out,dx+1,dy+1,OUTLINECOLOR);
+					}
+				}
+			}
+			
+			
+			// Font
+			for (var y=0;y<LETTER_HEIGHT;y++) {
+				var dy=ly+y+1;
+				for (var x=0;x<letterWidth;x++) {
+					var dx=lx+x+1;
+					var color=getPixel(font,x+_x1,y+_y1);
+					/*
+					if (color[3]) {
+						var color;
+						var notop=!getPixel(font,x+_x1,y+_y1-1)[3];
+						var nobottom=!getPixel(font,x+_x1,y+_y1+1)[3];
+
+						if (y>4) {
+
+							if (nobottom) color=COLORS[colorid][7];
+							else
+								if (notop) color=COLORS[colorid][0];
+							else color=COLORS[colorid][3];
+
+						} else {
+							if (notop) color=COLORS[colorid][0];
+							else if (nobottom) color=COLORS[colorid][7];
+								
+							else color=COLORS[colorid][3];
+
+						}
+
+						putPixel(out,dx,dy,color);
+					}
+					*/
+					if (color[3]) {
+						putPixel(out,dx,dy,COLORS[colorid][y]);
+					}
+				}
+			}
+		}
+
+	});
+
+	out.ctx.putImageData(out.imgdata,0,0);
+
+}
+
+function onl() {	
+	processFont("font-nfo",6,0);
+	processFont("font-small",3,1);
+}
+
+
+</script>
