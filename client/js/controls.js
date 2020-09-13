@@ -378,10 +378,8 @@ function Controls(master) {
 		
 	}
 	this.resetToDefaults=function(controlid) {
-		if (CONTROLSAVAIL[controlid]) {
+		if (CONTROLSAVAIL[controlid])
 			CONTROLSSETTINGS[controlid]=DOM.clone(CONTROLSDEFAULT[CONTROLSAVAIL[controlid].model.controlType]);
-			localStorage[CONTROLS_STORAGE_PREFIX+CONTROLSAVAIL[controlid].config]=JSON.stringify(CONTROLSSETTINGS[controlid]);
-		}
 	}
 
 	// Mouse
@@ -767,8 +765,18 @@ function Controls(master) {
 	}
 	this.setInputSetting=function(controlid,id,value) {
 		CONTROLSSETTINGS[controlid][id]=value;
-		localStorage[CONTROLS_STORAGE_PREFIX+CONTROLSAVAIL[controlid].config]=JSON.stringify(CONTROLSSETTINGS[controlid]);
 		initializeDevices();
+	}
+	this.saveSettings=function() {
+		var changed=false;
+		for (var k in CONTROLSSETTINGS) {
+			var
+				key=CONTROLS_STORAGE_PREFIX+CONTROLSAVAIL[k].config,
+				newValue=JSON.stringify(CONTROLSSETTINGS[k]);
+			if (localStorage[key]&&(localStorage[key]!=newValue)) changed=true;
+			localStorage[key]=newValue;
+		}
+		return changed;
 	}
 	this.waitInput=function(controlid,controlcommand,cb) {
 		initializeDevices();
@@ -778,6 +786,7 @@ function Controls(master) {
 			control.model.input.forEach(input=>{
 				if (input.id==controlcommand) WAITINGINPUTTYPE=input.inputType;
 			});
+			for (var k in SYSTEMCONTROLS) SYSTEMCONTROLS[k]=0;
 			WAITINGID=controlid;
 			WAITINGCOMMAND=controlcommand;
 			WAITINGCB=cb;
@@ -872,6 +881,8 @@ function ControlsSettings() {
 					}
 					case MENU_CANCEL:{
 						TRANSITION.end(-1);
+						if (CONTROLS.saveSettings())
+							TRANSITION.notify("Got it!","Controls configuration saved");
 						break;
 					}
 				}

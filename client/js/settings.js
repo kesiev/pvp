@@ -400,7 +400,11 @@ function Settings() {
 	}
 
 	function saveConfig() {
-		localStorage[SETTINGS_STORAGE_PREFIX]=JSON.stringify(CONFIG);
+		var previousValue=localStorage[SETTINGS_STORAGE_PREFIX],
+			newValue=JSON.stringify(CONFIG);
+		if (previousValue&&(previousValue!=newValue))
+			TRANSITION.notify("Got it!","New settings saved");
+		localStorage[SETTINGS_STORAGE_PREFIX]=newValue;
 	}
 
 	function findOption(id) {
@@ -557,10 +561,10 @@ function Settings() {
 				break;
 			}
 			case MENU_CANCEL:{
-				saveConfig();
 				resetAudio();
 				if (stack.length>0) TRANSITION.end({menu:stack.pop(),skipstack:true});
 				else TRANSITION.end({quit:-1});	
+				saveConfig();
 				break;
 			}
 		}
