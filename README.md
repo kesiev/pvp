@@ -8,7 +8,7 @@
 
 <div align="center">
     <a href="https://www.kesiev.com/pvp/">Play!</a><br>
-    <i>Try playing with Firefox Browser</i>
+    <i>Try playing with Firefox Browser and disabling your ad-blocker</i>
 </div>
 
 ---
