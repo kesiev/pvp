@@ -48,6 +48,9 @@ var app = http.createServer(function (request, response) {
         case '.ogg':
             contentType = 'audio/ogg';
             break;
+        case '.mp4':
+            contentType = 'audio/mp4';
+            break;
     }
 
     fs.readFile(CLIENTROOT+filePath, function(error, content) {

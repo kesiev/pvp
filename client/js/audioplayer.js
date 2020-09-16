@@ -191,7 +191,7 @@ function AudioPlayer(cfg) {
 				loadResources(sampleslist,onprogress,ondone);
 			} else {
 				var request = new XMLHttpRequest();
-				request.open('GET', sample.file, true);
+				request.open('GET', sample.file+(DOM.canPlayOgg?".ogg":".mp4"), true);
 				request.responseType = 'arraybuffer';
 				request.onload = function() {					
 					audioContext.decodeAudioData(request.response, function(buffer) {

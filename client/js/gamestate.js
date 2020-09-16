@@ -306,6 +306,7 @@ function GameState(master) {
 
 	this.setFullScreen=function() {
 		DOM.setFullScreen(document.body);
+		CONTROLS.resetButtons();
 	}
 
 	this.initialize=function() {

@@ -382,6 +382,14 @@ function Controls(master) {
 			CONTROLSSETTINGS[controlid]=DOM.clone(CONTROLSDEFAULT[CONTROLSAVAIL[controlid].model.controlType]);
 	}
 
+	this.resetButtons=function() {
+		var k;
+		for (k in SYSTEMCONTROLS) SYSTEMCONTROLS[k]=0;
+		for (k in HWMOUSE.buttons) HWMOUSE.buttons[k]=0;
+		for (k in HWKEYBOARD) HWKEYBOARD[k]=0;
+		for (k in HWTOUCH.buttons) HWTOUCH.buttons[k]=0;
+	}
+
 	// Mouse
 
 	function initializeMouse(screen) {
@@ -406,6 +414,11 @@ function Controls(master) {
 		}
 	}
 
+	function mouseContextMenu(e) {
+		e.preventDefault();
+		return false;
+	}
+
 	function mouseUp(e) {
 		HWMOUSE.buttons[e.button]=0;
 	}
@@ -415,10 +428,12 @@ function Controls(master) {
 			DOM.addEventListener(window,"mousemove",mouseMove,false);
 			DOM.addEventListener(window,"mousedown",mouseDown,false);
 			DOM.addEventListener(window,"mouseup",mouseUp,false);
+			DOM.addEventListener(window,"contextmenu",mouseContextMenu,false);
 		} else {
 			DOM.removeEventListener(window,"mousemove",mouseMove,false);
 			DOM.removeEventListener(window,"mousedown",mouseDown,false);
 			DOM.removeEventListener(window,"mouseup",mouseUp,false);
+			DOM.removeEventListener(window,"contextmenu",mouseContextMenu,false);
 		}
 	}
 
@@ -786,7 +801,7 @@ function Controls(master) {
 			control.model.input.forEach(input=>{
 				if (input.id==controlcommand) WAITINGINPUTTYPE=input.inputType;
 			});
-			for (var k in SYSTEMCONTROLS) SYSTEMCONTROLS[k]=0;
+			this.resetButtons();
 			WAITINGID=controlid;
 			WAITINGCOMMAND=controlcommand;
 			WAITINGCB=cb;

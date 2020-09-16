@@ -1581,6 +1581,7 @@ var Dom=function() {
 
 	var
 		div=document.createElement('div'),
+		audio = document.createElement('audio'),
 		passiveSupported,
 		fullScreen;
 
@@ -1588,12 +1589,13 @@ var Dom=function() {
 	document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
 
 	if (div.requestFullscreen) fullScreen={request:"requestFullscreen",exit:"exitFullscreen",is:"fullscreen",on:"fullscreenchange",error:"fullscreenerror"};
-	else if (div.webkitRequestFullscreen) fullScreen={request:"webkitRequestFullScreen",exit:"webkitExitFullscreen",is:"webkitIsFullScreen",on:"webkitfullscreenchange",error:"webkitfullscreenerror"};
+	else if (div.webkitRequestFullScreen) fullScreen={request:"webkitRequestFullScreen",exit:"webkitExitFullscreen",is:"webkitIsFullScreen",on:"webkitfullscreenchange",error:"webkitfullscreenerror"};
 	else if (div.mozRequestFullScreen) fullScreen={request:"mozRequestFullScreen",exit:"mozCancelFullScreen",is:"mozFullScreenElement",on:"mozfullscreenchange",error:"mozfullscreenerror"};
 	else if (div.msRequestFullscreen) fullScreen={request:"msRequestFullscreen",exit:"msExitFullscreen",is:"msFullscreenElement",on:"MSFullscreenChange",error:"msfullscreenerror"};
 
 	this.isFirefox=navigator.userAgent.toLowerCase().indexOf("firefox") > -1;
 	this.isTouch=!!('ontouchstart' in window || navigator.maxTouchPoints);
+	this.canPlayOgg=!!(audio.canPlayType && audio.canPlayType('audio/ogg; codecs="vorbis"').replace(/no/, ''));
 
 	if (!window.requestAnimFrame) window.requestAnimFrame = function( callback ){ callback() };
 
