@@ -139,19 +139,19 @@ CONTROLSDEFAULT[CONTROLTYPE_KEYMOUSE]={
 CONTROLSDEFAULT[CONTROLTYPE_CONTROLLER]={
 	rotateAxis:[0,2],
 	moveAxis:[0,0],
-	moveForward:12,
-	moveBackward:13,
-	rotateRight:15,
-	rotateLeft:14,
-	strafe:0,
-	fire:5,
-	action:4,
-	systemUp:12,
-	systemDown:13,
-	systemLeft:14,
-	systemRight:15,
-	systemConfirm:9,
-	systemCancel:8
+	moveForward:[0,12],
+	moveBackward:[0,13],
+	rotateRight:[0,15],
+	rotateLeft:[0,14],
+	strafe:[0,0],
+	fire:[0,5],
+	action:[0,4],
+	systemUp:[0,12],
+	systemDown:[0,13],
+	systemLeft:[0,14],
+	systemRight:[0,15],
+	systemConfirm:[0,9],
+	systemCancel:[0,8]
 };
 CONTROLSDEFAULT[CONTROLTYPE_TOUCH]={
 	rotateAxis:1,
@@ -254,15 +254,17 @@ function Controls(master) {
 		};
 
 	function waitInputDone(value) {
-		WAITINGCB(value);
-		initializeDevices();
-		WAITINGCONTROLTYPE=0;
-		WAITINGID=0;
-		WAITINGCOMMAND=0;
-		WAITINGINPUTTYPE=0;
-		WAITING=false;
-		WAITINGCB=0;
-		WAITINGTIMER=10;
+		if (WAITINGCB) {
+			WAITINGCB(value);
+			initializeDevices();
+			WAITINGCONTROLTYPE=0;
+			WAITINGID=0;
+			WAITINGCOMMAND=0;
+			WAITINGINPUTTYPE=0;
+			WAITING=false;
+			WAITINGCB=0;
+			WAITINGTIMER=10;
+		}
 	}
 
 	function initializeDevices() {
@@ -283,9 +285,37 @@ function Controls(master) {
 	}
 
 	function padButtonIsPressed(b) {
-		if (PRESSEDMODE) return b.pressed;
+		if (PRESSEDMODE) return b?QMATH.abs(b.value)>0.7:0;
 		else return b==1.0;
 	}
+
+	function loadConfig(id) {
+		var controller=CONTROLSAVAIL[id];
+		if (controller) {
+			var key=CONTROLS_STORAGE_PREFIX+controller.config,data;
+			if (localStorage[key]) {
+				data=JSON.parse(localStorage[key]);				
+				switch (controller.model.controlType) {
+					case CONTROLTYPE_CONTROLLER:{
+						// Convert old gamepad buttons configs
+						for (var k in controller.model.input) {
+							var dataKey=controller.model.input[k].id;
+							switch (controller.model.input[k].inputType) {
+								case INPUTTYPE_PADKEY:{
+									if (!Array.isArray(data[dataKey]))
+										data[dataKey]=[0,data[dataKey]];
+									break;
+								}
+							}
+						}
+						break;
+					}
+				}
+			} else data=DOM.clone(CONTROLSDEFAULT[controller.model.controlType]);
+			CONTROLSSETTINGS[id]=data;
+		}
+	}
+	
 	this.setVibrationStrength=function(v) { vibrationStrength=v; }
 	this.vibrate=function(controller,rumble) {
 		if (vibrationStrength&&CONTROLSAVAIL[controller]&&CONTROLSAVAIL[controller].model.canVibrate) {
@@ -361,12 +391,7 @@ function Controls(master) {
 
 		// Initialize game controls
 		for (var k in CONTROLSAVAIL) {
-			if (!CONTROLSSETTINGS[k]) {
-				if (localStorage[CONTROLS_STORAGE_PREFIX+CONTROLSAVAIL[k].config])
-					CONTROLSSETTINGS[k]=JSON.parse(localStorage[CONTROLS_STORAGE_PREFIX+CONTROLSAVAIL[k].config]);
-				else
-					CONTROLSSETTINGS[k]=DOM.clone(CONTROLSDEFAULT[CONTROLSAVAIL[k].model.controlType]);
-			}
+			if (!CONTROLSSETTINGS[k]) loadConfig(k);
 			if (!GAMECONTROLS[k]) {
 				GAMECONTROLS[k]={};	
 				for (var i in CONTROLSSETTINGS[k]) GAMECONTROLS[k][i]=0;
@@ -713,7 +738,11 @@ function Controls(master) {
 							if (WAITINGID==id)
 								if (WAITINGINPUTTYPE==INPUTTYPE_PADKEY) {
 									for (b=0;b<gamepad.buttons.length;b++)
-										if (padButtonIsPressed(gamepad.buttons[b])) waitInputDone(b);
+										if (padButtonIsPressed(gamepad.buttons[b])) waitInputDone([0,b]);
+									for (var i=0;i<gamepad.axes.length;i++) {
+										if (gamepad.axes[i]<-0.7) waitInputDone([1,i,-1]);
+										else if (gamepad.axes[i]>0.7) waitInputDone([1,i,1]);
+									}
 								} else if (WAITINGINPUTTYPE==INPUTTYPE_2DAXIS) {
 									for (var i=0;i<gamepad.axes.length;i+=2) {
 										if (
@@ -748,12 +777,24 @@ function Controls(master) {
 									break;
 								}
 								case INPUTTYPE_PADKEY:{
-									if (gamepad.buttons[settings[inputid]])									
-										if (padButtonIsPressed(gamepad.buttons[settings[inputid]]))
-											if (gameControls[inputid]==0) gameControls[inputid]=1;
-											else gameControls[inputid]=2;
-										else if (gameControls[inputid]>0) gameControls[inputid]=-1;
-											else gameControls[inputid]=0;
+									var hit=0,button=settings[inputid];
+									switch (button[0]) {
+										case 0:{
+											// True button
+											hit=padButtonIsPressed(gamepad.buttons[button[1]]);
+											break
+										}
+										case 1:{
+											// Axis movement
+											hit=gamepad.axes[button[1]]?gamepad.axes[button[1]]*button[2]>0.7:0;
+											break;
+										}
+									}
+									if (hit)
+										if (gameControls[inputid]==0) gameControls[inputid]=1;
+										else gameControls[inputid]=2;
+									else if (gameControls[inputid]>0) gameControls[inputid]=-1;
+										else gameControls[inputid]=0;
 									break;
 								}
 							}
@@ -819,7 +860,10 @@ function Controls(master) {
 				break;
 			}
 			case INPUTTYPE_PADKEY:{
-				ret="Button "+value
+				if (value[0])
+					ret="Axis "+value[1]+(value[2]>0?"+":"-");
+				else
+					ret="Button "+value[1];
 				break;
 			}
 			case INPUTTYPE_2DAXIS:{
