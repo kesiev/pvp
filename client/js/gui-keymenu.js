@@ -395,7 +395,7 @@ function KeyMenu(settings) {
 						}					
 				}
 			}
-			if (!ret) {
+			if (!ret&&TRANSITION.isFree) {
 				if (!locked&&(confirm||(MENU_MOUSE.timer&&MENU_MOUSE.click&&MENU_MOUSE.aimingOption))) {
 					AUDIOPLAYER.play("menu_select");
 					if (this.selectedOption.keyboard)
