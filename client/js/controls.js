@@ -172,7 +172,7 @@ function Controls(master) {
 		PRESSEDMODE=0,
 		HWKEYBOARD=[],
 		HWMOUSE={mx:0,my:0,x:0,y:0,buttons:[]},MOUSEBUTTONS=[],
-		HWTOUCH={buttons:[],areas:[{cx:0,cy:0,out:[0,0]},{cx:0,cy:0,out:[0,0]}],ids:{}},
+		HWTOUCH={buttons:[],areas:[{cx:0,cy:0,out:[0,0]},{cx:0,cy:0,out:[0,0]}],buttonIds:{},areasIds:{}},
 		TOUCHBUTTONS=[],
 		TOUCHAREAS=[],
 		HWCONTROLLERS={},
@@ -182,7 +182,7 @@ function Controls(master) {
 		touchAvailable=this.touchAvailable=master.screenControls=="touch",
 		mouseAvailable=this.mouseAvailable=master.screenControls=="mouse",
 		vibrationStrength=true,pointerScreen,eventCb,
-		touchButtons,touchAreasButtons,touchAreasAnalog,touch,a,b,tx,ty,touchArea,touchIdButton,touchAnalogSensitivity,touchSwipeSensitivity,
+		touchButtons,touchAreasButtons,touchAreasAnalog,touch,a,b,tx,ty,touchArea,testTouchArea,touchIdButton,touchAnalogSensitivity,touchSwipeSensitivity,
 		touchSwipeSensitivityRatio=7,touchAnalogSensitivity=3,setTouchHudOpacity=0.3;
 
 	const
@@ -413,6 +413,14 @@ function Controls(master) {
 		for (k in HWMOUSE.buttons) HWMOUSE.buttons[k]=0;
 		for (k in HWKEYBOARD) HWKEYBOARD[k]=0;
 		for (k in HWTOUCH.buttons) HWTOUCH.buttons[k]=0;
+		for (k in HWTOUCH.areas) {
+			HWTOUCH.areas[k].cx=0;
+			HWTOUCH.areas[k].cy=0;
+			HWTOUCH.areas[k].out[0]=0;
+			HWTOUCH.areas[k].out[1]=0;
+		}
+		HWTOUCH.buttonIds={};
+		HWTOUCH.areasIds={};
 	}
 
 	// Mouse
@@ -511,10 +519,10 @@ function Controls(master) {
 
 	function checkArea(set,x,y) {
 		for (b=0;b<set.length;b++) {
-			touchArea=set[b];
+			testTouchArea=set[b];
 			if (
-					(x>=touchArea.x1)&&(x<=touchArea.x2)&&
-					(y>=touchArea.y1)&&(y<=touchArea.y2)
+					(x>=testTouchArea.x1)&&(x<=testTouchArea.x2)&&
+					(y>=testTouchArea.y1)&&(y<=testTouchArea.y2)
 				) return b;
 		}
 	}
@@ -557,25 +565,27 @@ function Controls(master) {
 				// Buttons
 				touchArea=checkArea(touchAreasButtons,touch.clientX,touch.clientY);
 				if (touchArea!==undefined) {
+					HWTOUCH.buttonIds[touch.identifier]=touchArea;
 					if (WAITING) {
 						if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHBUTTON) 
 							waitInputDone(touchArea);
 					} else {
-						HWTOUCH.ids[touch.identifier]=touchArea;
 						HWTOUCH.buttons[touchArea]=1;
 					}
-				}
-				// Areas
-				touchArea=checkArea(touchAreasAnalog,touch.clientX,touch.clientY);
-				if (touchArea!==undefined) {
-					if (WAITING) {
-						if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHAREA) 
-							waitInputDone(touchArea);
-					} else {
-						HWTOUCH.areas[touchArea].out[0]=0;
-						HWTOUCH.areas[touchArea].out[1]=0;
+				} else {
+					// Areas
+					touchArea=checkArea(touchAreasAnalog,touch.clientX,touch.clientY);
+					if (touchArea!==undefined) {
+						HWTOUCH.areasIds[touch.identifier]=touchArea;
 						HWTOUCH.areas[touchArea].cx=touch.clientX
 						HWTOUCH.areas[touchArea].cy=touch.clientY;
+						if (WAITING) {
+							if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHAREA) 
+								waitInputDone(touchArea);
+						} else {
+							HWTOUCH.areas[touchArea].out[0]=0;
+							HWTOUCH.areas[touchArea].out[1]=0;
+						}
 					}
 				}
 			}
@@ -585,24 +595,31 @@ function Controls(master) {
 		DOM.addEventListener(window,"touchmove",function(e) {
 			for (a=0;a<e.changedTouches.length;a++) {
 				touch=e.changedTouches[a];
-				// Buttons
-				touchIdButton=HWTOUCH.ids[touch.identifier];
-				if (touchIdButton!==undefined) {
-					touchButton=checkArea(touchAreasButtons,touch.clientX,touch.clientY);
-					HWTOUCH.buttons[touchIdButton]=touchButton==touchIdButton;
-				}
-				// Areas
-				touchArea=checkArea(touchAreasAnalog,touch.clientX,touch.clientY);
+				touchArea=HWTOUCH.buttonIds[touch.identifier];
 				if (touchArea!==undefined) {
-					tx=touch.clientX-HWTOUCH.areas[touchArea].cx
-					ty=touch.clientY-HWTOUCH.areas[touchArea].cy
-					HWTOUCH.areas[touchArea].out[0]=tx/touchAnalogSensitivity;
-					HWTOUCH.areas[touchArea].out[1]=ty/touchAnalogSensitivity;
-					touchArea=touchAreasAnalog[touchArea];
-					HWTOUCH.buttons[touchArea.firstButton]=ty<-touchSwipeSensitivity;
-					HWTOUCH.buttons[touchArea.firstButton+1]=ty>touchSwipeSensitivity;
-					HWTOUCH.buttons[touchArea.firstButton+2]=tx<-touchSwipeSensitivity;
-					HWTOUCH.buttons[touchArea.firstButton+3]=tx>touchSwipeSensitivity;
+					HWTOUCH.buttons[touchArea]=checkArea(touchAreasButtons,touch.clientX,touch.clientY)==touchArea;
+				} else {
+					touchArea=HWTOUCH.areasIds[touch.identifier];
+					if (touchArea!==undefined) {
+						touchIdButton=touchAreasAnalog[touchArea].firstButton;
+						tx=touch.clientX-HWTOUCH.areas[touchArea].cx
+						ty=touch.clientY-HWTOUCH.areas[touchArea].cy
+						if (WAITING) {
+							if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHBUTTON) {
+								if (ty<-touchSwipeSensitivity) waitInputDone(touchIdButton);
+								else if (ty>touchSwipeSensitivity) waitInputDone(touchIdButton+1);
+								else if (tx<-touchSwipeSensitivity) waitInputDone(touchIdButton+2);
+								else if (tx>touchSwipeSensitivity) waitInputDone(touchIdButton+3);
+							}
+						} else {
+							HWTOUCH.areas[touchArea].out[0]=tx/touchAnalogSensitivity;
+							HWTOUCH.areas[touchArea].out[1]=ty/touchAnalogSensitivity;
+							HWTOUCH.buttons[touchIdButton]=ty<-touchSwipeSensitivity;
+							HWTOUCH.buttons[touchIdButton+1]=ty>touchSwipeSensitivity;
+							HWTOUCH.buttons[touchIdButton+2]=tx<-touchSwipeSensitivity;
+							HWTOUCH.buttons[touchIdButton+3]=tx>touchSwipeSensitivity;
+						}
+					}
 				}
 			}
 			e.preventDefault();
@@ -610,20 +627,22 @@ function Controls(master) {
 		DOM.addEventListener(window,"touchend",function(e) {
 			for (a=0;a<e.changedTouches.length;a++) {
 				touch=e.changedTouches[a];
-				delete HWTOUCH.ids[touch.identifier];
-				// Buttons
-				touchButton=checkArea(touchAreasButtons,touch.clientX,touch.clientY);
-				if (touchButton!==undefined) HWTOUCH.buttons[touchButton]=0;
-				// Areas
-				touchArea=checkArea(touchAreasAnalog,touch.clientX,touch.clientY);
+				touchArea=HWTOUCH.buttonIds[touch.identifier];
 				if (touchArea!==undefined) {
-					HWTOUCH.areas[touchArea].out[0]=0;
-					HWTOUCH.areas[touchArea].out[1]=0;
-					touchArea=touchAreasAnalog[touchArea];
-					HWTOUCH.buttons[touchArea.firstButton]=0;
-					HWTOUCH.buttons[touchArea.firstButton+1]=0;
-					HWTOUCH.buttons[touchArea.firstButton+2]=0;
-					HWTOUCH.buttons[touchArea.firstButton+3]=0;
+					HWTOUCH.buttons[touchArea]=0;
+					delete HWTOUCH.buttonIds[touch.identifier];
+				} else {
+					touchArea=HWTOUCH.areasIds[touch.identifier];
+					if (touchArea!==undefined) {
+						HWTOUCH.areas[touchArea].out[0]=0;
+						HWTOUCH.areas[touchArea].out[1]=0;
+						touchIdButton=touchAreasAnalog[touchArea].firstButton;
+						HWTOUCH.buttons[touchIdButton]=0;
+						HWTOUCH.buttons[touchIdButton+1]=0;
+						HWTOUCH.buttons[touchIdButton+2]=0;
+						HWTOUCH.buttons[touchIdButton+3]=0;
+						delete HWTOUCH.areasIds[touch.identifier];
+					}
 				}
 			}
 			e.preventDefault(); 
