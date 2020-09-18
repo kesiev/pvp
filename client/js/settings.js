@@ -439,7 +439,7 @@ function Settings() {
 		if (localStorage[SETTINGS_STORAGE_PREFIX]) {
 			var loaded=JSON.parse(localStorage[SETTINGS_STORAGE_PREFIX]);
 			for (var k in CONFIG)
-				if (loaded[k]!=undefined) CONFIG[k]=loaded[k];
+				if (loaded[k]!==undefined) CONFIG[k]=loaded[k];
 		}
 	}
 

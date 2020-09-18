@@ -41,7 +41,7 @@ function SetupGame(music,gameSettings,storagePrefix) {
 		if (localStorage[storagePrefix]) {
 			var loaded=JSON.parse(localStorage[storagePrefix]);
 			gameSettings.forEach(option=>{
-				if (loaded[option.id]!=undefined) this.setup[option.id]=loaded[option.id];
+				if (loaded[option.id]!==undefined) this.setup[option.id]=loaded[option.id];
 			})
 		}
 		this.updateOptions();

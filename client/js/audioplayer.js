@@ -71,7 +71,7 @@ function AudioPlayer(cfg) {
 				if (sample.properties.pitchStart!==undefined)
 					sound.source.playbackRate.value=sample.properties.pitchStart+(sample.properties.pitchRange*QMATH.random());
 				sound.source.onended=()=>{ sound.ended=true; }
-				if (loop&&(sample.properties.loopStart!=undefined)) {
+				if (loop&&(sample.properties.loopStart!==undefined)) {
 					sound.source.loopStart=sample.properties.loopStart;
 					sound.source.loopEnd=sample.properties.loopEnd;
 				}
