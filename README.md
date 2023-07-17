@@ -237,6 +237,10 @@ After the game was out KesieV and his colleagues played it a lot during lunch br
 
 The game runs quite smoothly on most modern mobiles and computers but the overall speed seems _capped_ on some laptops using Google Chrome. Moreover, the WebRTC IP Anonymization feature on Chrome may block you from playing PvP in LAN. We suggest you to try using Firefox to play PvP if you're facing one of these problems.
 
+## Is there a kiosk mode?
+
+Yes! You can run the game on Google Chrome via game launchers like [Playnite](https://playnite.link/) with a command like ``<your Chrome path>/chrome.exe -kiosk --autoplay-policy=no-user-gesture-required "<your PVP installation>/client/index.html#kiosk"``. The game will autostart and quit holding down the "Start" button for 3 seconds.
+
 ## Contacts
 
 As usual, you can contact KesieV on [Twitter](https://twitter.com/kesiev) or using this GitHub project tools.

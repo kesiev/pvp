@@ -1,6 +1,6 @@
 
 function MainMenu() {
-	const
+	let
 		MENUCOLOR=PALETTE.BLACK,
 		CAMERADISTANCE=1,
 		LOGOWIDTH=116,
@@ -29,10 +29,12 @@ function MainMenu() {
 		options.push({label:"Arcade single player",id:GAMESTATE_SCOREATTACK});
 		options.push({label:"Settings",id:GAMESTATE_SETTINGS});
 		options.push({label:"Credits",id:GAMESTATE_CREDITS});
+		if (KIOSKMODE.isKioskMode())
+			options.push({label:"Quit",id:GAMESTATE_QUIT});
 
 		creditsy=QMATH.ceil(SCREEN_HEIGHT-(FONT.tileHeight*FOOTERCREDITS.length));
 		menu=new KeyMenu({
-			menuY:NETPLAY.isAvailable?NETMENUY:MENUY,
+			menuY:(NETPLAY.isAvailable?NETMENUY:MENUY)-(KIOSKMODE.isKioskMode()?6:0),
 			noGoBack:true
 		});
 

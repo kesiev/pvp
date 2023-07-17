@@ -126,5 +126,7 @@ function Cover() {
 		})
 
 		callback=cb;
+
+		if (KIOSKMODE.isKioskMode()) start();
 	}
 }

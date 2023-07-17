@@ -7,6 +7,7 @@ const
 	GAMESTATE_CREDITS=6,
 	GAMESTATE_SCOREATTACK=7,
 	GAMESTATE_CONTROLSEXPLAIN=8,
+	GAMESTATE_QUIT=99,
 	GAMESTATE_NETPLAY=100,
 	GAMESTATE_BENCHMARK=200,
 	GAMESTATE_FIRST=GAMESTATE_CONTROLSEXPLAIN;
@@ -129,6 +130,11 @@ function GameState(master) {
 					currentManager.show();
 					break;
 				}
+				case GAMESTATE_QUIT:{
+					currentManager={ render:function(){} };
+					close();
+					break;
+				}
 			}
 			gameState=nextGameState;
 			nextGameState=0;
@@ -200,6 +206,9 @@ function GameState(master) {
 					console.log(JSON.stringify(ret));
 					nextGameState=GAMESTATE_PLAY;
 				}
+				break;
+			}
+			case GAMESTATE_QUIT:{
 				break;
 			}
 		}
