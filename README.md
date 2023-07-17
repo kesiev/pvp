@@ -239,7 +239,7 @@ The game runs quite smoothly on most modern mobiles and computers but the overal
 
 ## Is there a kiosk mode?
 
-Yes! You can run the game on Google Chrome via game launchers like [Playnite](https://playnite.link/) with a command like ``<your Chrome path>/chrome.exe -kiosk --autoplay-policy=no-user-gesture-required "<your PVP installation>/client/index.html#kiosk"``. The game will autostart and quit holding down the "Start" button for 3 seconds.
+Yes! You can run the game on Google Chrome via game launchers like [Playnite](https://playnite.link/) with a command like ``<your Chrome path>/chrome.exe -kiosk --autoplay-policy=no-user-gesture-required "<your PVP installation>/client/index.html#kiosk"``. The game will autostart and add a "Quit" option.
 
 ## Contacts
 
