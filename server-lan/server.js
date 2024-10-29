@@ -76,7 +76,7 @@ var app = http.createServer(function (request, response) {
 
 // Socket server
 
-var io = require('socket.io').listen(app);
+var io = require('socket.io')(app);
 var netplayServer=new netplayserver.NetplayServer({
     logLevel:LOGLEVEL,
     roomTimeLimit:ROOMTIMELIMIT,
