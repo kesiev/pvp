@@ -31,10 +31,12 @@ function MainMenu() {
 		options.push({label:"Credits",id:GAMESTATE_CREDITS});
 		if (KIOSKMODE.isKioskMode())
 			options.push({label:"Quit",id:GAMESTATE_QUIT});
+		if (PLAYLIGHT.isPlayLightMode())
+			options.push({label:"More games!",id:GAMESTATE_MOREGAMES});
 
 		creditsy=QMATH.ceil(SCREEN_HEIGHT-(FONT.tileHeight*FOOTERCREDITS.length));
 		menu=new KeyMenu({
-			menuY:(NETPLAY.isAvailable?NETMENUY:MENUY)-(KIOSKMODE.isKioskMode()?6:0),
+			menuY:(NETPLAY.isAvailable?NETMENUY:MENUY)-(KIOSKMODE.isKioskMode() || PLAYLIGHT.isPlayLightMode()?6:0),
 			noGoBack:true
 		});
 

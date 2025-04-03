@@ -7,6 +7,7 @@
 	<script src='/socket.io/socket.io.js'></script>
 
 	<script type="text/javascript" src="js/kioskmode.js"></script>
+	<script type="text/javascript" src="js/playlight.js"></script>
 
 	<script type="text/javascript" src="js/external/peerjs.min.js"></script>
 	<script type="text/javascript" src="js/external/samjs.min.js"></script>
@@ -426,6 +427,9 @@ function onl() {
 		]
 	},(master,images)=>{
 
+		// Integrations
+		PLAYLIGHT.load();
+
 		// Basic objects
 		QMATH=new QMath(master);
 		TRIGO=new Trigo(master);
@@ -487,10 +491,15 @@ function onl() {
 		SETTINGS.initialize();
 
 		// Extra settings
-		NETPLAY=new Netplay([
-			NetplaySocketIo,
-			NetplayPeerJs
-		],master);
+		NETPLAY=new Netplay(
+			PLAYLIGHT.isPlayLightMode()?
+			[]
+			:
+			[
+				NetplaySocketIo,
+				NetplayPeerJs
+			],
+			master);
 		NETPLAY.initialize();
 
 		TRANSITION=new Transition(master);
@@ -520,6 +529,8 @@ function onl() {
 		
 		MAINMENU=new MainMenu(master);
 		MAINMENU.initialize();
+
+		SETTINGS.reindexMenu();
 
 		var start=0;		
 		GAMESTATE.run(start);

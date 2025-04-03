@@ -472,6 +472,12 @@ function Settings() {
 		updateMenu();
 	}
 
+	this.reindexMenu=function(id,label,options,renderer) {
+		updateConfigIndexes();
+		loadConfig();
+		updateMenu();
+	}
+
 	this.getOptionValueById=function(optionid,valueid) {
 		if (optionsIndex[optionid]) {
 			var option=optionsIndex[optionid];

@@ -7,6 +7,7 @@ const
 	GAMESTATE_CREDITS=6,
 	GAMESTATE_SCOREATTACK=7,
 	GAMESTATE_CONTROLSEXPLAIN=8,
+	GAMESTATE_MOREGAMES=98,
 	GAMESTATE_QUIT=99,
 	GAMESTATE_NETPLAY=100,
 	GAMESTATE_BENCHMARK=200,
@@ -74,7 +75,7 @@ function GameState(master) {
 
 		// Logic
 		if (nextGameState) {
-			CONTROLS.registerEventCallback();			
+			CONTROLS.registerEventCallback();
 			switch (nextGameState) {
 				case GAMESTATE_LOCALMULTIPLAYER:{
 					currentManager=LOCALMULTIPLAYER;
@@ -128,6 +129,15 @@ function GameState(master) {
 				case GAMESTATE_BENCHMARK:{
 					currentManager=BENCHMARK;
 					currentManager.show();
+					break;
+				}
+				case GAMESTATE_MOREGAMES:{
+					nextGameState=GAMESTATE_CREDITS;
+					currentManager=CREDITS;
+					currentManager.show();
+					AUDIOPLAYER.stopMusic();
+					CONTROLS.disableControls();
+					PLAYLIGHT.moreGames();
 					break;
 				}
 				case GAMESTATE_QUIT:{

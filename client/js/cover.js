@@ -127,6 +127,6 @@ function Cover() {
 
 		callback=cb;
 
-		if (KIOSKMODE.isKioskMode()) start();
+		if (KIOSKMODE.isKioskMode() || PLAYLIGHT.isPlayLightMode()) start();
 	}
 }

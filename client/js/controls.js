@@ -169,6 +169,8 @@ CONTROLSDEFAULT[CONTROLTYPE_TOUCH]={
 function Controls(master) {
 	var
 		self=this,
+		isControlsActive=true,
+		isControlsUnactive=false,
 		PRESSEDMODE=0,
 		HWKEYBOARD=[],
 		HWMOUSE={mx:0,my:0,x:0,y:0,buttons:[]},MOUSEBUTTONS=[],
@@ -456,8 +458,14 @@ function Controls(master) {
 		HWMOUSE.buttons[e.button]=0;
 	}
 
+	function enableControls() {
+		isControlsActive = true;
+		isControlsUnactive = false;
+	}
+
 	function changePointerLock() {
 		if (document.pointerLockElement === pointerScreen || document.mozPointerLockElement === pointerScreen) {
+			enableControls();
 			DOM.addEventListener(window,"mousemove",mouseMove,false);
 			DOM.addEventListener(window,"mousedown",mouseDown,false);
 			DOM.addEventListener(window,"mouseup",mouseUp,false);
@@ -487,9 +495,22 @@ function Controls(master) {
 	function createTouchPanel(label) {
 		var node=document.createElement("div");
 		node.className="touchPanel";
+		node._isTouchPanel=true;
 		document.body.appendChild(node);
 		node.innerHTML=label;
 		return node;
+	}
+
+	this.disableControls=function() {
+		isControlsActive = false;
+		isControlsUnactive = true;
+		if (document.exitPointerLock) {
+			document.exitPointerLock();
+		}
+	}
+
+	this.enableControls=function() {
+		enableControls();
 	}
 
 	this.setTouchSwipeSensitivity=function(v) { touchSwipeSensitivityRatio=14*v; }
@@ -560,92 +581,101 @@ function Controls(master) {
 			"Right area - swipe left", "Right area - swipe right"
 		];
 		DOM.addEventListener(window,"touchstart",function(e) {
-			for (a=0;a<e.changedTouches.length;a++) {
-				touch=e.changedTouches[a];
-				// Buttons
-				touchArea=checkArea(touchAreasButtons,touch.clientX,touch.clientY);
-				if (touchArea!==undefined) {
-					HWTOUCH.buttonIds[touch.identifier]=touchArea;
-					if (WAITING) {
-						if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHBUTTON) 
-							waitInputDone(touchArea);
-					} else {
-						HWTOUCH.buttons[touchArea]=1;
-					}
-				} else {
-					// Areas
-					touchArea=checkArea(touchAreasAnalog,touch.clientX,touch.clientY);
+			if (isControlsUnactive && (e.target._isTouchPanel)) {
+				enableControls();
+			}
+			if (isControlsActive) {
+				for (a=0;a<e.changedTouches.length;a++) {
+					touch=e.changedTouches[a];
+					// Buttons
+					touchArea=checkArea(touchAreasButtons,touch.clientX,touch.clientY);
 					if (touchArea!==undefined) {
-						HWTOUCH.areasIds[touch.identifier]=touchArea;
-						HWTOUCH.areas[touchArea].cx=touch.clientX
-						HWTOUCH.areas[touchArea].cy=touch.clientY;
+						HWTOUCH.buttonIds[touch.identifier]=touchArea;
 						if (WAITING) {
-							if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHAREA) 
+							if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHBUTTON) 
 								waitInputDone(touchArea);
 						} else {
-							HWTOUCH.areas[touchArea].out[0]=0;
-							HWTOUCH.areas[touchArea].out[1]=0;
+							HWTOUCH.buttons[touchArea]=1;
+						}
+					} else {
+						// Areas
+						touchArea=checkArea(touchAreasAnalog,touch.clientX,touch.clientY);
+						if (touchArea!==undefined) {
+							HWTOUCH.areasIds[touch.identifier]=touchArea;
+							HWTOUCH.areas[touchArea].cx=touch.clientX
+							HWTOUCH.areas[touchArea].cy=touch.clientY;
+							if (WAITING) {
+								if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHAREA) 
+									waitInputDone(touchArea);
+							} else {
+								HWTOUCH.areas[touchArea].out[0]=0;
+								HWTOUCH.areas[touchArea].out[1]=0;
+							}
 						}
 					}
 				}
+				if (eventCb) eventCb(HWTOUCH.buttons[0],HWTOUCH.buttons[1]);
+				e.preventDefault(); 
 			}
-			if (eventCb) eventCb(HWTOUCH.buttons[0],HWTOUCH.buttons[1]);
-			e.preventDefault(); 
 		},false);
 		DOM.addEventListener(window,"touchmove",function(e) {
-			for (a=0;a<e.changedTouches.length;a++) {
-				touch=e.changedTouches[a];
-				touchArea=HWTOUCH.buttonIds[touch.identifier];
-				if (touchArea!==undefined) {
-					HWTOUCH.buttons[touchArea]=checkArea(touchAreasButtons,touch.clientX,touch.clientY)==touchArea;
-				} else {
-					touchArea=HWTOUCH.areasIds[touch.identifier];
+			if (isControlsActive) {
+				for (a=0;a<e.changedTouches.length;a++) {
+					touch=e.changedTouches[a];
+					touchArea=HWTOUCH.buttonIds[touch.identifier];
 					if (touchArea!==undefined) {
-						touchIdButton=touchAreasAnalog[touchArea].firstButton;
-						tx=touch.clientX-HWTOUCH.areas[touchArea].cx
-						ty=touch.clientY-HWTOUCH.areas[touchArea].cy
-						if (WAITING) {
-							if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHBUTTON) {
-								if (ty<-touchSwipeSensitivity) waitInputDone(touchIdButton);
-								else if (ty>touchSwipeSensitivity) waitInputDone(touchIdButton+1);
-								else if (tx<-touchSwipeSensitivity) waitInputDone(touchIdButton+2);
-								else if (tx>touchSwipeSensitivity) waitInputDone(touchIdButton+3);
+						HWTOUCH.buttons[touchArea]=checkArea(touchAreasButtons,touch.clientX,touch.clientY)==touchArea;
+					} else {
+						touchArea=HWTOUCH.areasIds[touch.identifier];
+						if (touchArea!==undefined) {
+							touchIdButton=touchAreasAnalog[touchArea].firstButton;
+							tx=touch.clientX-HWTOUCH.areas[touchArea].cx
+							ty=touch.clientY-HWTOUCH.areas[touchArea].cy
+							if (WAITING) {
+								if (WAITINGINPUTTYPE==INPUTTYPE_TOUCHBUTTON) {
+									if (ty<-touchSwipeSensitivity) waitInputDone(touchIdButton);
+									else if (ty>touchSwipeSensitivity) waitInputDone(touchIdButton+1);
+									else if (tx<-touchSwipeSensitivity) waitInputDone(touchIdButton+2);
+									else if (tx>touchSwipeSensitivity) waitInputDone(touchIdButton+3);
+								}
+							} else {
+								HWTOUCH.areas[touchArea].out[0]=tx/touchAnalogSensitivity;
+								HWTOUCH.areas[touchArea].out[1]=ty/touchAnalogSensitivity;
+								HWTOUCH.buttons[touchIdButton]=ty<-touchSwipeSensitivity;
+								HWTOUCH.buttons[touchIdButton+1]=ty>touchSwipeSensitivity;
+								HWTOUCH.buttons[touchIdButton+2]=tx<-touchSwipeSensitivity;
+								HWTOUCH.buttons[touchIdButton+3]=tx>touchSwipeSensitivity;
 							}
-						} else {
-							HWTOUCH.areas[touchArea].out[0]=tx/touchAnalogSensitivity;
-							HWTOUCH.areas[touchArea].out[1]=ty/touchAnalogSensitivity;
-							HWTOUCH.buttons[touchIdButton]=ty<-touchSwipeSensitivity;
-							HWTOUCH.buttons[touchIdButton+1]=ty>touchSwipeSensitivity;
-							HWTOUCH.buttons[touchIdButton+2]=tx<-touchSwipeSensitivity;
-							HWTOUCH.buttons[touchIdButton+3]=tx>touchSwipeSensitivity;
 						}
 					}
 				}
+				e.preventDefault();
 			}
-			e.preventDefault();
 		},false);
 		DOM.addEventListener(window,"touchend",function(e) {
-			for (a=0;a<e.changedTouches.length;a++) {
-				touch=e.changedTouches[a];
-				touchArea=HWTOUCH.buttonIds[touch.identifier];
-				if (touchArea!==undefined) {
-					HWTOUCH.buttons[touchArea]=0;
-					delete HWTOUCH.buttonIds[touch.identifier];
-				} else {
-					touchArea=HWTOUCH.areasIds[touch.identifier];
+			if (isControlsActive) {
+				for (a=0;a<e.changedTouches.length;a++) {
+					touch=e.changedTouches[a];
+					touchArea=HWTOUCH.buttonIds[touch.identifier];
 					if (touchArea!==undefined) {
-						HWTOUCH.areas[touchArea].out[0]=0;
-						HWTOUCH.areas[touchArea].out[1]=0;
-						touchIdButton=touchAreasAnalog[touchArea].firstButton;
-						HWTOUCH.buttons[touchIdButton]=0;
-						HWTOUCH.buttons[touchIdButton+1]=0;
-						HWTOUCH.buttons[touchIdButton+2]=0;
-						HWTOUCH.buttons[touchIdButton+3]=0;
-						delete HWTOUCH.areasIds[touch.identifier];
+						HWTOUCH.buttons[touchArea]=0;
+						delete HWTOUCH.buttonIds[touch.identifier];
+					} else {
+						touchArea=HWTOUCH.areasIds[touch.identifier];
+						if (touchArea!==undefined) {
+							HWTOUCH.areas[touchArea].out[0]=0;
+							HWTOUCH.areas[touchArea].out[1]=0;
+							touchIdButton=touchAreasAnalog[touchArea].firstButton;
+							HWTOUCH.buttons[touchIdButton]=0;
+							HWTOUCH.buttons[touchIdButton+1]=0;
+							HWTOUCH.buttons[touchIdButton+2]=0;
+							HWTOUCH.buttons[touchIdButton+3]=0;
+							delete HWTOUCH.areasIds[touch.identifier];
+						}
 					}
 				}
+				e.preventDefault(); 
 			}
-			e.preventDefault(); 
 		},false);
 	}
 
@@ -684,7 +714,7 @@ function Controls(master) {
 		this.indexControls();
 	};
 	this.frame=function(){
-		if (WAITINGTIMER) WAITINGTIMER--; else {			
+		if (WAITINGTIMER) WAITINGTIMER--; else if (isControlsActive) {			
 			// Low-level keyboard
 			KEYS.forEach(id=>{
 				if (HWKEYBOARD[id])
