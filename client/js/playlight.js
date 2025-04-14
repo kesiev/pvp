@@ -35,6 +35,7 @@ let PLAYLIGHT={
                         visible:false
                     },
                     exitIntent: {
+                        immediate: true,
                         enabled: true
                     }
                 });
